@@ -1,0 +1,42 @@
+
+spring:
+  application:
+    name: chelidonium
+  profiles:
+    active: chelidonium, default
+
+---
+spring.profiles: chelidonium
+
+server:
+  port: 9292
+
+chelidonium:
+  aliyun:
+    endpoints:
+      shanghai: https://oss-cn-shanghai.aliyuncs.com
+      qingdao: https://oss-cn-qingdao.aliyuncs.com
+
+    accessKey: JQFdSyxVVfZ3ccvj
+    secretKey: 5WEttddiP5OkIXr8zmTVL3GR5gqZ3l
+
+  baseDir: C:\\temp
+
+---
+spring.profiles: dev
+
+server:
+  port: 9292
+
+chelidonium:
+  aliyun:
+    endpoints:
+      shanghai: https://oss-cn-shanghai.aliyuncs.com
+      qingdao: https://oss-cn-qingdao.aliyuncs.com
+
+    accessKey: key1
+    secretKey: s3cret
+
+  baseDir: C:\\temp
+
+
