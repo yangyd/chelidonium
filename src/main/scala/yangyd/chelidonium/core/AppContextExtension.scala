@@ -4,8 +4,8 @@ import akka.actor.{Actor, ExtendedActorSystem, Extension, ExtensionId, Extension
 import org.springframework.context.ApplicationContext
 
 trait AppContextAware {
-  _: Actor => // self type (Cake pattern)
-  def appContext = AppContextExtension(context.system).applicationContext
+  _: Actor => // self type (Cake pattern), restrict the type to which this trait can apply
+  def appContext: ApplicationContext = AppContextExtension(context.system).applicationContext
 }
 
 class AppContextExtensionImpl extends Extension {

@@ -5,6 +5,7 @@ import java.io.{File, FilenameFilter}
 import akka.actor.{Actor, ActorLogging}
 import yangyd.chelidonium.aliyun.AliyunBucket
 
+import scala.language.implicitConversions
 import scala.util.Random
 
 object DownloadManager {
@@ -13,9 +14,7 @@ object DownloadManager {
   case class Rejected(bucket: String, task: BucketTask)
   case class Started(bucket: String, task: BucketTask)
 
-  implicit def filter(p: (String) ⇒ Boolean): FilenameFilter = new FilenameFilter {
-    override def accept(dir: File, name: String): Boolean = p(name)
-  }
+  implicit def filter(p: String ⇒ Boolean): FilenameFilter = (dir: File, name: String) ⇒ p(name)
 }
 
 class DownloadManager extends Actor with ActorLogging {

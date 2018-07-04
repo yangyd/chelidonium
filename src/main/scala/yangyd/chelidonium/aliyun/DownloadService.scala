@@ -11,33 +11,28 @@ import yangyd.chelidonium.aliyun.actor.DownloadManager.{BucketTask, Rejected, St
 import yangyd.chelidonium.aliyun.actor.{DownloadManager, DownloadMonitor}
 import yangyd.chelidonium.core.{ActorSystemBean, DirService}
 
-import scala.collection.JavaConversions._
 import scala.concurrent.duration._
-
-object DownloadService {
-  implicit def runnable(fn: ⇒ Unit): Runnable = new Runnable { override def run(): Unit = fn }
-}
+import scala.collection.JavaConverters._
 
 @Component
-class DownloadService @Autowired() (actorSystemBean: ActorSystemBean,
-                                    dirService: DirService,
-                                    @Qualifier("pooled") executor: ExecutorService,
-                                    scheduled: ScheduledExecutorService)
+class DownloadService @Autowired()(actorSystemBean: ActorSystemBean,
+                                   dirService: DirService,
+//                                   @Qualifier("pooled") executor: ExecutorService,
+                                   scheduled: ScheduledExecutorService)
 {
-  lazy val downloadManager: ActorRef = actorSystemBean.actorOf(Props(classOf[DownloadManager]), "dlmgr")
-  lazy val inbox = actorSystemBean.createInbox()
+  private lazy val downloadManager: ActorRef =
+    actorSystemBean.actorOf(Props(classOf[DownloadManager]), "download-manager")
+  private lazy val inbox = actorSystemBean.createInbox()
 
-  var started: Seq[Started] = Nil
-  var rejected: Seq[Rejected] = Nil
-  var completed: Seq[BucketTask] = Nil
-  var checker: ScheduledFuture[_] = _
-
-  import DownloadService._
+  private var started: Seq[Started] = Nil
+  private var rejected: Seq[Rejected] = Nil
+  private var completed: Seq[BucketTask] = Nil
+  private var checker: ScheduledFuture[_] = _
 
   @PostConstruct
   def init(): Unit = {
     actorSystemBean.actorOf(Props(classOf[DownloadMonitor]), DownloadMonitor.name)
-    checker = scheduled.scheduleAtFixedRate(checkMail, 30, 10, TimeUnit.SECONDS)
+    checker = scheduled.scheduleAtFixedRate(() ⇒ checkMail(), 30, 10, TimeUnit.SECONDS)
   }
 
   @PreDestroy
@@ -48,20 +43,29 @@ class DownloadService @Autowired() (actorSystemBean: ActorSystemBean,
   private def checkMail(): Unit = {
     try {
       inbox.receive(5.seconds) match {
-        case s: Started ⇒ synchronized { started :+= s }
-        case j: Rejected ⇒ synchronized { rejected :+= j }
-        case b: BucketTask ⇒ synchronized { completed :+= b }
+        case s: Started ⇒ synchronized {
+          started :+= s
+        }
+        case j: Rejected ⇒ synchronized {
+          rejected :+= j
+        }
+        case b: BucketTask ⇒ synchronized {
+          completed :+= b
+        }
       }
     } catch {
-      case _:TimeoutException ⇒ ()
+      case _: TimeoutException ⇒ ()
     }
   }
 
   def download(dir: String, bucket: AliyunBucket, files: JMap[String, Long]): Unit = {
-    inbox.send(downloadManager, WorkOrder(bucket, BucketTask(dirService.mkdir(dir), files.toList)))
+    val fileSet = files.entrySet().asScala map { entry ⇒ entry.getKey → entry.getValue }
+    inbox.send(downloadManager, WorkOrder(bucket, BucketTask(dirService.mkdir(dir), fileSet.toSeq)))
   }
 
-  def startedTasks: JList[Started] = started
-  def rejectedTasks: JList[Rejected] = rejected
-  def completedTasks: JList[BucketTask] = completed
+  def startedTasks: JList[Started] = started.asJava
+
+  def rejectedTasks: JList[Rejected] = rejected.asJava
+
+  def completedTasks: JList[BucketTask] = completed.asJava
 }
