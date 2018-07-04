@@ -9,11 +9,13 @@ import yangyd.chelidonium.aliyun.actor.DownloadMonitor.DownloadLog
 import yangyd.chelidonium.core.AppContextAware
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 
 object BucketDownloader {
+
   case class DownloadTask(bucket: AliyunBucket, key: String, file: File, offset: Long, size: Long)
+
   case class DownloadComplete(key: String)
+
   case class WorkerAvailable(worker: ActorRef)
 
   val CONCURRENCY = 2
@@ -22,11 +24,10 @@ object BucketDownloader {
 }
 
 class BucketDownloader(bucketTask: BucketTask, bucket: AliyunBucket)
-    extends Actor with AppContextAware with ActorLogging
-{
+  extends Actor with AppContextAware with ActorLogging {
+
   import AliyunWorker._
   import BucketDownloader._
-  import context.dispatcher
 
   private val monitor = context.actorSelection(s"/user/${DownloadMonitor.name}")
 
@@ -56,8 +57,10 @@ class BucketDownloader(bucketTask: BucketTask, bucket: AliyunBucket)
   // each worker initiates and watches over an actual download thread.
   // We use limited number of workers to control download concurrency.
   1 to CONCURRENCY map { i ⇒
-      context.actorOf(Props(classOf[AliyunWorker], appContext), s"worker-$i")
-  } foreach { self ! WorkerAvailable(_) }
+    context.actorOf(Props(classOf[AliyunWorker], appContext), s"worker-$i")
+  } foreach {
+    self ! WorkerAvailable(_)
+  }
 
   override def receive: Receive = {
     case WorkerAvailable(worker) ⇒

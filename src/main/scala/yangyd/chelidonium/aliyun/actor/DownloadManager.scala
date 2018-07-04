@@ -9,22 +9,28 @@ import scala.language.implicitConversions
 import scala.util.Random
 
 object DownloadManager {
+
   case class BucketTask(destDir: File, files: Seq[(String, Long)])
+
   case class WorkOrder(bucket: AliyunBucket, task: BucketTask)
+
   case class Rejected(bucket: String, task: BucketTask)
+
   case class Started(bucket: String, task: BucketTask)
 
   implicit def filter(p: String ⇒ Boolean): FilenameFilter = (dir: File, name: String) ⇒ p(name)
 }
 
 class DownloadManager extends Actor with ActorLogging {
+
   import DownloadManager._
+
   override def receive: Receive = {
     case WorkOrder(bucket, task) ⇒
       val actorName = s"${bucket.bucketName()}-dl-${Random.nextInt(100000)}"
       // put a lock file to prevent conflict
       if (task.destDir.isDirectory && !locked(task.destDir) &&
-          new File(task.destDir, actorName + ".lock").createNewFile()) {
+        new File(task.destDir, actorName + ".lock").createNewFile()) {
         context.actorOf(BucketDownloader.props(task, bucket), actorName)
         sender() ! Started(bucket.bucketName, task)
       } else {
@@ -37,5 +43,5 @@ class DownloadManager extends Actor with ActorLogging {
       context.parent forward t // completed task
   } // end receive
 
-  private def locked(dir: File) = dir.listFiles((f:String) ⇒ f endsWith ".lock").length > 0
+  private def locked(dir: File) = dir.listFiles((f: String) ⇒ f endsWith ".lock").length > 0
 }

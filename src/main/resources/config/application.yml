@@ -1,42 +1,24 @@
 
 spring:
-  application:
-    name: chelidonium
-  profiles:
-    active: chelidonium, default
+  application.name: chelidonium
+  profiles.active: chelidonium,default
 
 ---
 spring.profiles: chelidonium
 
-server:
-  port: 9292
+server.port: 9292
+
+management:
+  endpoint.shutdown.enabled: true
+  endpoints:
+    web.exposure.include: '*'
 
 chelidonium:
   aliyun:
     endpoints:
-      shanghai: https://oss-cn-shanghai.aliyuncs.com
-      qingdao: https://oss-cn-qingdao.aliyuncs.com
+      shanghai: http://www.replace.me
 
-    accessKey: JQFdSyxVVfZ3ccvj
-    secretKey: 5WEttddiP5OkIXr8zmTVL3GR5gqZ3l
+    accessKey: 'replace me'
+    secretKey: 'replace me'
 
-  baseDir: C:\\temp
-
----
-spring.profiles: dev
-
-server:
-  port: 9292
-
-chelidonium:
-  aliyun:
-    endpoints:
-      shanghai: https://oss-cn-shanghai.aliyuncs.com
-      qingdao: https://oss-cn-qingdao.aliyuncs.com
-
-    accessKey: key1
-    secretKey: s3cret
-
-  baseDir: C:\\temp
-
-
+  baseDir: C:\\Intel\\Logs

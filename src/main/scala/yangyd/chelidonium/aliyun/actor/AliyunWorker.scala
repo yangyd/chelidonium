@@ -17,7 +17,9 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object AliyunWorker {
+
   import com.aliyun.oss.OSSErrorCode._
+
   // No retry for these errors
   val fatalErrors = Set(NO_SUCH_KEY, NO_SUCH_BUCKET, ACCESS_DENIED, INVALID_ACCESS_KEY_ID)
 
@@ -25,12 +27,16 @@ object AliyunWorker {
   val THRESHOLD: Long = 1024 * 10 * 30
 
   case class Report(task: DownloadTask)
+
   case class Fatal(task: DownloadTask)
+
   case class Check(overwatch: Overwatch)
+
 }
 
 class AliyunWorker(applicationContext: ApplicationContext) extends IndirectActorProducer {
   override def actorClass: Class[_ <: Actor] = classOf[AliyunWorkerActor]
+
   override def produce(): Actor = applicationContext.getBean(classOf[AliyunWorkerActor])
 }
 
@@ -44,16 +50,20 @@ class AliyunWorkerActor @Autowired()(dataTransport: DataTransport) extends Actor
   override def receive: Receive = {
     case Check(overwatch) ⇒ overwatch.check()
 
-    case task @ DownloadTask(bucket, key, file, offset, size) ⇒
+    case task@DownloadTask(bucket, key, file, offset, size) ⇒
       val _sender = sender()
       val _checker = new AtomicReference[Cancellable]()
 
       def done(m: AnyRef): Unit = {
         system.scheduler.scheduleOnce(15.seconds, _sender, m)
-        _checker.get() match { case c: Cancellable ⇒ c.cancel() }
+        _checker.get() match {
+          case c: Cancellable ⇒ c.cancel()
+        }
       }
 
-      Future { bucket.readFile(key, offset) } flatMap {
+      Future {
+        bucket.readFile(key, offset)
+      } flatMap {
         val overwatch = new Overwatch(THRESHOLD)
         _checker.set(system.scheduler.schedule(30.seconds, 30.seconds, self, Check(overwatch)))
         dataTransport.transfer(file, _, Some(overwatch))

@@ -2,22 +2,21 @@ package yangyd.chelidonium.aliyun
 
 import java.util.concurrent._
 import java.util.{List ⇒ JList, Map ⇒ JMap}
-import javax.annotation.{PostConstruct, PreDestroy}
 
 import akka.actor.{ActorRef, Props}
-import org.springframework.beans.factory.annotation.{Autowired, Qualifier}
+import javax.annotation.{PostConstruct, PreDestroy}
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import yangyd.chelidonium.aliyun.actor.DownloadManager.{BucketTask, Rejected, Started, WorkOrder}
 import yangyd.chelidonium.aliyun.actor.{DownloadManager, DownloadMonitor}
 import yangyd.chelidonium.core.{ActorSystemBean, DirService}
 
-import scala.concurrent.duration._
 import scala.collection.JavaConverters._
+import scala.concurrent.duration._
 
 @Component
 class DownloadService @Autowired()(actorSystemBean: ActorSystemBean,
                                    dirService: DirService,
-//                                   @Qualifier("pooled") executor: ExecutorService,
                                    scheduled: ScheduledExecutorService)
 {
   private lazy val downloadManager: ActorRef =
